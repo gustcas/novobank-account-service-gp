@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: novobanco-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-novobanco}
+      POSTGRES_USER: ${POSTGRES_USER:-novobanco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-novobanco123}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-novobanco} -d ${POSTGRES_DB:-novobanco}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - novobanco-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: novobanco-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@novobanco.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - novobanco-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: novobanco-app
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-novobanco}
+      DB_USERNAME: ${POSTGRES_USER:-novobanco}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-novobanco123}
+      PORT: 8080
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - novobanco-net
+
+volumes:
+  postgres_data:
+
+networks:
+  novobanco-net:
+    driver: bridge
