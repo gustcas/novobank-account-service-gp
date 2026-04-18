@@ -14,7 +14,10 @@
 
         <!-- Naming -->
         <module name="TypeName"/>
-        <module name="MethodName"/>
+        <!-- Permite snake_case en métodos de prueba: should_X_when_Y -->
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9_]*$"/>
+        </module>
         <module name="LocalVariableName"/>
         <module name="MemberName"/>
         <module name="ParameterName"/>
