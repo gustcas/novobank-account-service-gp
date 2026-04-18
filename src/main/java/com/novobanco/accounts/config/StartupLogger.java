@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class StartupLogger {
 
-    private static final Logger log = LoggerFactory.getLogger(StartupLogger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StartupLogger.class);
 
     private final Environment environment;
 
@@ -30,14 +30,14 @@ public class StartupLogger {
                 ? String.join(", ", activeProfiles).toUpperCase()
                 : "DEFAULT (desarrollo local)";
 
-        log.info("╔══════════════════════════════════════════════════════╗");
-        log.info("║     NovoBanco — Account Service iniciado             ║");
-        log.info("╠══════════════════════════════════════════════════════╣");
-        log.info("║  Ambiente   : {}",      padRight(profile, 36) + "   ║");
-        log.info("║  Puerto     : {}",      padRight(port, 36) + "   ║");
-        log.info("║  Swagger UI : http://localhost:{}/swagger-ui.html", port);
-        log.info("║  API Base   : http://localhost:{}/api/v1", port);
-        log.info("╚══════════════════════════════════════════════════════╝");
+        LOG.info("╔══════════════════════════════════════════════════════╗");
+        LOG.info("║     NovoBanco — Account Service iniciado             ║");
+        LOG.info("╠══════════════════════════════════════════════════════╣");
+        LOG.info("║  Ambiente   : {}",      padRight(profile, 36) + "   ║");
+        LOG.info("║  Puerto     : {}",      padRight(port, 36) + "   ║");
+        LOG.info("║  Swagger UI : http://localhost:{}/swagger-ui.html", port);
+        LOG.info("║  API Base   : http://localhost:{}/api/v1", port);
+        LOG.info("╚══════════════════════════════════════════════════════╝");
     }
 
     private String padRight(String text, int length) {
