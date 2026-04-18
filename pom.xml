@@ -48,13 +48,10 @@
         </dependency>
 
         <!-- Flyway for DB migrations -->
+        <!-- flyway-core en Spring Boot 3.2 usa Flyway 9.x donde PostgreSQL está incluido -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
         <!-- OpenAPI / Swagger UI -->
