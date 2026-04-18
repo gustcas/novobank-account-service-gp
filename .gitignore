@@ -9,3 +9,5 @@ target/
 *.log
 .env
 !.env.example
+.claude/
+.run/
