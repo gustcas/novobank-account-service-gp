@@ -73,12 +73,7 @@ expensas de la consistencia de datos.
 
 ## Inicio Rápido
 
-### Prerequisitos
-- Docker + Docker Compose
-- Java 17 (solo para desarrollo)
-- Maven 3.8+ (solo para desarrollo)
-
-### Levantar el entorno completo
+### Opción A — Docker Compose (recomendado, un solo comando)
 
 ```bash
 cp .env.example .env
@@ -89,6 +84,37 @@ La aplicación estará disponible en:
 - **API:** http://localhost:8080/api/v1
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
 - **pgAdmin:** http://localhost:5050
+
+Docker Compose levanta PostgreSQL 16, ejecuta el script de permisos automáticamente y luego inicia la aplicación. No requiere ninguna configuración adicional.
+
+---
+
+### Opción B — PostgreSQL local (sin Docker)
+
+Si tienes PostgreSQL instalado localmente, ejecuta estos comandos **una sola vez** como superusuario (`postgres`):
+
+```sql
+-- Conectado como postgres, en cualquier base de datos
+CREATE DATABASE novobanco;
+CREATE USER novobanco WITH PASSWORD 'novobanco123';
+GRANT ALL PRIVILEGES ON DATABASE novobanco TO novobanco;
+
+-- Ahora conectado a la base novobanco
+ALTER SCHEMA public OWNER TO novobanco;
+```
+
+> **Nota para PostgreSQL 15+:** A partir de la versión 15, el permiso CREATE en el esquema
+> `public` ya no se otorga por defecto a usuarios no-superusuario. El comando
+> `ALTER SCHEMA public OWNER TO novobanco` resuelve esto de forma permanente.
+
+Luego configura las variables de entorno o modifica `application.properties`:
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/novobanco
+spring.datasource.username=novobanco
+spring.datasource.password=novobanco123
+```
+
+---
 
 ### Ejecutar pruebas
 
