@@ -8,7 +8,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 
 @Component
 public class StartupLogger {
@@ -34,8 +33,8 @@ public class StartupLogger {
         log.info("╔══════════════════════════════════════════════════════╗");
         log.info("║     NovoBanco — Account Service iniciado             ║");
         log.info("╠══════════════════════════════════════════════════════╣");
-        log.info("║  Ambiente   : {}",      padRight(profile, 36) + "║");
-        log.info("║  Puerto     : {}",      padRight(port, 36) + "║");
+        log.info("║  Ambiente   : {}",      padRight(profile, 36) + "   ║");
+        log.info("║  Puerto     : {}",      padRight(port, 36) + "   ║");
         log.info("║  Swagger UI : http://localhost:{}/swagger-ui.html", port);
         log.info("║  API Base   : http://localhost:{}/api/v1", port);
         log.info("╚══════════════════════════════════════════════════════╝");
