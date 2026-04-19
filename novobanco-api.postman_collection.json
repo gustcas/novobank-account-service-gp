@@ -215,13 +215,7 @@
           }],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/accounts/{{accountId}}/transactions?page=0&size=20",
-              "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "20" }
-              ]
-            }
+            "url": "{{baseUrl}}/accounts/{{accountId}}/transactions?page=0&size=20"
           }
         }
       ]
