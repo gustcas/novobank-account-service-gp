@@ -2,7 +2,7 @@ name: NovoBanco CI Pipeline
 
 on:
   push:
-    branches: [ develop, certificacion, main ]
+    branches: [ develop]
   pull_request:
     branches: [ certificacion, main ]
 
