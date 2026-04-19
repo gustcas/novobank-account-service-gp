@@ -136,6 +136,7 @@ mvn verify -B
 | Método | Ruta                                               | Descripción                                      |
 |--------|----------------------------------------------------|--------------------------------------------------|
 | POST   | `/api/v1/accounts`                                 | Crear cuenta                                     |
+| GET    | `/api/v1/accounts?customerId={customerId}`         | Listar cuentas de un cliente                     |
 | GET    | `/api/v1/accounts/{accountId}`                     | Consultar cuenta por ID                          |
 | GET    | `/api/v1/accounts/number/{accountNumber}`          | Consultar cuenta por número                      |
 | POST   | `/api/v1/accounts/{accountId}/transactions/deposits`    | Depositar fondos                            |
@@ -152,6 +153,11 @@ POST /api/v1/accounts
   "customerId": "550e8400-e29b-41d4-a716-446655440000",
   "type": "SAVINGS"
 }
+```
+
+**Listar cuentas por customerId:**
+```http
+GET /api/v1/accounts?customerId=550e8400-e29b-41d4-a716-446655440000
 ```
 
 **Depositar:**
@@ -171,6 +177,20 @@ POST /api/v1/accounts/{sourceId}/transactions/transfers
   "amount": 200.00
 }
 ```
+
+### Flujo de integraciÃ³n para frontend
+
+Cuando el canal consumidor autentica al usuario en un `auth-service` separado, el flujo
+recomendado para descubrir sus cuentas es:
+
+1. El `auth-service` devuelve el `customerId` del usuario autenticado.
+2. El frontend consulta `GET /api/v1/accounts?customerId=...`.
+3. Si existen varias cuentas, la interfaz permite seleccionar la cuenta activa.
+4. El `accountId` seleccionado se reutiliza luego en saldo, historial, depÃ³sito,
+   retiro y transferencia.
+
+Este endpoint complementa el contrato original por `accountId` y permite una
+integraciÃ³n web/mobile coherente cuando un cliente posee mÃºltiples cuentas.
 
 ---
 
