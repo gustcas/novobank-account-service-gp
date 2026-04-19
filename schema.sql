@@ -76,24 +76,79 @@ COMMENT ON COLUMN accounts.balance IS 'Saldo disponible en USD con precision NUM
 COMMENT ON COLUMN transactions.related_tx_id IS 'Vincula debito y credito en una transferencia atomica';
 COMMENT ON COLUMN transactions.idempotency_key IS 'Clave de idempotencia para detectar requests duplicados';
 
-/*
- * DIAGRAMA ER (ASCII)
- *
- *  accounts                          transactions
- * ┌──────────────────┐              ┌─────────────────────────┐
- * │ id (UUID) PK     │◄─────────────│ account_id (UUID) FK    │
- * │ customer_id UUID │              │ id (UUID) PK            │
- * │ account_number   │              │ type VARCHAR(20)        │
- * │ type VARCHAR(20) │              │ amount NUMERIC(19,4)    │
- * │ currency (USD)   │              │ status VARCHAR(20)      │
- * │ balance NUM(19,4)│              │ reference UUID UNIQUE   │
- * │ status VARCHAR   │              │ related_tx_id UUID FK──┐│
- * │ created_at TZ    │              │ idempotency_key UUID   ││
- * └──────────────────┘              │ created_at TIMESTAMPTZ ││
- *                                   └────────────────────────┘│
- *                                        ▲ (self-referential)  │
- *                                        └─────────────────────┘
- *
- * related_tx_id vincula las dos mitades de una transferencia:
- *   TRANSFER_DEBIT (cuenta origen) ↔ TRANSFER_CREDIT (cuenta destino)
- */
+-- ============================================================
+-- DIAGRAMA ENTIDAD-RELACIÓN (ASCII)
+-- ============================================================
+--
+--   CLIENTE (externo)
+--   customer_id UUID ──────────────────────────────────────────┐
+--                                                              │ 1
+--                                                              ▼
+--  ┌─────────────────────────────────────────────────┐        N
+--  │                    ACCOUNTS                     │ ◄──────┘
+--  ├─────────────────────────────────────────────────┤
+--  │ PK  id             UUID          NOT NULL        │
+--  │     customer_id    UUID          NOT NULL        │  ← referencia externa
+--  │ UQ  account_number VARCHAR(20)   NOT NULL        │
+--  │     type           VARCHAR(20)   SAVINGS|CHECKING│
+--  │     currency       VARCHAR(3)    DEFAULT 'USD'   │
+--  │     balance        NUMERIC(19,4) DEFAULT 0       │  ← CHECK >= 0
+--  │     status         VARCHAR(20)   ACTIVE|BLOCKED  │
+--  │     created_at     TIMESTAMPTZ   NOT NULL        │
+--  └────────────────────────┬────────────────────────┘
+--                           │ 1
+--                           │ fk_transactions_account
+--                           │ N
+--  ┌────────────────────────▼────────────────────────┐
+--  │                  TRANSACTIONS                   │
+--  ├─────────────────────────────────────────────────┤
+--  │ PK  id              UUID          NOT NULL       │ ◄──┐
+--  │ FK  account_id      UUID          NOT NULL       │    │ fk_transactions_related_tx
+--  │     type            VARCHAR(20)                  │    │ DEFERRABLE INITIALLY DEFERRED
+--  │     amount          NUMERIC(19,4) CHECK > 0      │    │
+--  │     status          VARCHAR(20)   SUCCESS|FAILED │    │
+--  │ UQ  reference       UUID          NOT NULL       │    │
+--  │ FK? related_tx_id   UUID          NULLABLE       │────┘ (auto-referencial: débito ↔ crédito)
+--  │ UQ  idempotency_key UUID          NULLABLE       │
+--  │     created_at      TIMESTAMPTZ   NOT NULL       │
+--  └─────────────────────────────────────────────────┘
+--
+-- CARDINALIDADES:
+--   accounts    1 ──── N    transactions   (una cuenta tiene muchas transacciones)
+--   transactions 1 ──── 1   transactions   (débito vinculado a crédito via related_tx_id)
+--
+-- ÍNDICES y CONSULTAS QUE SOPORTAN:
+--
+--   idx_transactions_account_created  (account_id, created_at DESC)
+--     → Q2: últimos 20 movimientos de cuenta X ordenados por fecha DESC
+--
+--   idx_transactions_type_created     (type, created_at DESC)
+--     → Q3: transferencias salientes del cliente Y en los últimos 30 días
+--
+--   idx_accounts_customer_id          (customer_id)
+--     → todas las cuentas de un cliente (JOIN con transactions para Q3)
+--
+--   UNIQUE(reference)                 — índice implícito del constraint
+--     → Q4: ¿existe transacción con referencia Z? (detección de duplicados)
+--
+--   UNIQUE(account_number)            — índice implícito del constraint
+--     → Q1: saldo actual de cuenta X via GET /accounts/{id}
+--
+-- RESPUESTAS A LAS 4 CONSULTAS DEL ENUNCIADO:
+--
+--   Q1. SELECT balance FROM accounts WHERE id = ?
+--       → O(log n) via PK index
+--
+--   Q2. SELECT * FROM transactions
+--       WHERE account_id = ? ORDER BY created_at DESC LIMIT 20
+--       → O(log n + 20) via idx_transactions_account_created
+--
+--   Q3. SELECT COUNT(*) FROM transactions t
+--       JOIN accounts a ON t.account_id = a.id
+--       WHERE a.customer_id = ? AND t.type = 'TRANSFER_DEBIT'
+--         AND t.created_at > NOW() - INTERVAL '30 days'
+--       → O(log n) via idx_accounts_customer_id + idx_transactions_type_created
+--
+--   Q4. SELECT id FROM transactions WHERE reference = ?
+--       → O(log n) via UNIQUE index en reference
+--
