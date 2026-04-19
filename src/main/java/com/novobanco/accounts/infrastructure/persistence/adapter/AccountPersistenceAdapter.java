@@ -9,6 +9,7 @@ import com.novobanco.accounts.infrastructure.persistence.repository.JpaAccountRe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,6 +29,14 @@ public class AccountPersistenceAdapter implements AccountRepository {
     @Override
     public Optional<Account> findById(UUID accountId) {
         return jpaRepository.findById(accountId).map(this::toDomain);
+    }
+
+    @Override
+    public List<Account> findByCustomerId(UUID customerId) {
+        return jpaRepository.findAllByCustomerIdOrderByCreatedAtDesc(customerId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override
