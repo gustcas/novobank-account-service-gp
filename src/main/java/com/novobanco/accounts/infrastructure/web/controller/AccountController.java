@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -38,6 +40,17 @@ public class AccountController {
                 request.type()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(AccountResponse.from(account));
+    }
+
+    @GetMapping
+    @Operation(summary = "List accounts by customer ID")
+    public ResponseEntity<List<AccountResponse>> getAccountsByCustomerId(
+            @RequestParam UUID customerId) {
+        List<AccountResponse> accounts = getAccountUseCase.getAccountsByCustomerId(customerId)
+                .stream()
+                .map(AccountResponse::from)
+                .toList();
+        return ResponseEntity.ok(accounts);
     }
 
     @GetMapping("/{accountId}")

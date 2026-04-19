@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
@@ -78,6 +79,51 @@ class AccountControllerIT extends AbstractIntegrationTest {
             .body("id", equalTo(accountId))
             .body("accountNumber", notNullValue())
             .body("type", equalTo("CHECKING"));
+    }
+
+    @Test
+    @DisplayName("should_list_accounts_by_customer_id")
+    void should_list_accounts_by_customer_id() {
+        UUID customerId = UUID.randomUUID();
+
+        CreateAccountRequest firstRequest = new CreateAccountRequest(customerId, AccountType.SAVINGS);
+        CreateAccountRequest secondRequest = new CreateAccountRequest(customerId, AccountType.CHECKING);
+        CreateAccountRequest thirdRequest = new CreateAccountRequest(UUID.randomUUID(), AccountType.SAVINGS);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(firstRequest)
+        .when()
+            .post("/accounts")
+        .then()
+            .statusCode(201);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(secondRequest)
+        .when()
+            .post("/accounts")
+        .then()
+            .statusCode(201);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(thirdRequest)
+        .when()
+            .post("/accounts")
+        .then()
+            .statusCode(201);
+
+        given()
+            .contentType(ContentType.JSON)
+            .queryParam("customerId", customerId)
+        .when()
+            .get("/accounts")
+        .then()
+            .statusCode(200)
+            .body("$", hasSize(2))
+            .body("[0].customerId", equalTo(customerId.toString()))
+            .body("[1].customerId", equalTo(customerId.toString()));
     }
 
     @Test

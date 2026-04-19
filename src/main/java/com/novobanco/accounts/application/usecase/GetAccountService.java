@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -15,6 +16,12 @@ import java.util.UUID;
 public class GetAccountService implements GetAccountUseCase {
 
     private final AccountRepository accountRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Account> getAccountsByCustomerId(UUID customerId) {
+        return accountRepository.findByCustomerId(customerId);
+    }
 
     @Override
     @Transactional(readOnly = true)
