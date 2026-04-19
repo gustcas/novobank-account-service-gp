@@ -477,6 +477,46 @@ El pesimista es más simple de razonar, no requiere reintentos y es correcto par
 
 ---
 
+### ADR-004: FK Auto-referencial DEFERRABLE INITIALLY DEFERRED en Transferencias
+
+**Contexto:** La tabla `transactions` tiene una FK auto-referencial `related_tx_id → transactions(id)`
+para vincular el débito y el crédito de cada transferencia. Dentro de un mismo `@Transactional`,
+se insertan primero el débito (con `related_tx_id = creditId`) y luego el crédito. PostgreSQL
+valida las FKs por defecto al momento de cada INSERT — no al commit.
+
+**Problema:** Al insertar el débito, PostgreSQL verifica que `creditId` exista en `transactions.id`.
+Pero el crédito aún no ha sido insertado → violación de FK → error 500.
+
+**Opciones consideradas:**
+1. **Eliminar la FK** — perder integridad referencial a nivel de DB
+2. **Insertar crédito primero** — el crédito referenciaría al débito que tampoco existe → mismo problema
+3. **Guardar ambos con `related_tx_id = NULL` y hacer UPDATE después** — dos roundtrips extra a la DB
+4. **`DEFERRABLE INITIALLY DEFERRED`** — PostgreSQL valida la FK al COMMIT, no por INSERT
+
+**Decisión:** `DEFERRABLE INITIALLY DEFERRED` (migración V2).
+
+```sql
+ALTER TABLE transactions
+    DROP CONSTRAINT fk_transactions_related_tx;
+ALTER TABLE transactions
+    ADD CONSTRAINT fk_transactions_related_tx
+        FOREIGN KEY (related_tx_id) REFERENCES transactions(id)
+        DEFERRABLE INITIALLY DEFERRED;
+```
+
+**¿Por qué es correcto?**
+- La FK sigue existiendo — la integridad referencial se garantiza al COMMIT
+- Al momento del COMMIT, ambas filas (débito y crédito) ya están presentes → constraint satisfecho
+- `@Transactional` garantiza que o persisten ambas o ninguna — el DEFERRED se alinea perfectamente
+  con la semántica transaccional de Spring
+
+**Consecuencias:**
+- Ganamos: FK real en el esquema + transferencias atómicas sin workarounds
+- Sacrificamos: la verificación fila por fila (que en este caso era incorrecta de todas formas)
+- Nota: `DEFERRABLE` solo funciona dentro de una transacción explícita. En autocommit, se verifica igual al INSERT.
+
+---
+
 ## Supuestos Documentados
 
 1. **Moneda única:** El sistema soporta solo USD. Una cuenta multi-moneda requeriría
