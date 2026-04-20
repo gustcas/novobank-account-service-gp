@@ -6,9 +6,22 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080/api/v1" },
-    { "key": "accountId", "value": "" },
-    { "key": "targetAccountId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "accountId",
+      "value": ""
+    },
+    {
+      "key": "targetAccountId",
+      "value": ""
+    },
+    {
+      "key": "customerId",
+      "value": "660e8400-e29b-41d4-a716-446655440001"
+    }
   ],
   "item": [
     {
@@ -16,21 +29,28 @@
       "item": [
         {
           "name": "Create Account (SAVINGS)",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "var json = pm.response.json();",
-                "pm.collectionVariables.set('accountId', json.id);",
-                "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                "pm.test('Has accountNumber', () => pm.expect(json.accountNumber).to.match(/^ACC-/));",
-                "pm.test('Balance is 0', () => pm.expect(json.balance).to.eql(0));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('accountId', json.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has accountNumber', () => pm.expect(json.accountNumber).to.match(/^ACC-/));",
+                  "pm.test('Balance is 0', () => pm.expect(json.balance).to.eql(0));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/accounts",
             "body": {
               "mode": "raw",
@@ -40,19 +60,26 @@
         },
         {
           "name": "Create Account (CHECKING) — Target for Transfer",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "var json = pm.response.json();",
-                "pm.collectionVariables.set('targetAccountId', json.id);",
-                "pm.test('Status 201', () => pm.response.to.have.status(201));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('targetAccountId', json.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/accounts",
             "body": {
               "mode": "raw",
@@ -62,31 +89,55 @@
         },
         {
           "name": "Get Account by ID",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                "pm.test('Has balance field', () => pm.expect(pm.response.json()).to.have.property('balance'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has balance field', () => pm.expect(pm.response.json()).to.have.property('balance'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/accounts/{{accountId}}"
           }
         },
         {
-          "name": "Get Account — Not Found (404)",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 404', () => pm.response.to.have.status(404));",
-                "pm.test('errorCode ACCOUNT_NOT_FOUND', () => pm.expect(pm.response.json().errorCode).to.eql('ACCOUNT_NOT_FOUND'));"
-              ]
+          "name": "List Accounts by Customer ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Response is array', () => pm.expect(json).to.be.an('array'));",
+                  "pm.test('All accounts belong to customerId', () => pm.expect(json.every(account => account.customerId === pm.collectionVariables.get('customerId'))).to.eql(true));"
+                ]
+              }
             }
-          }],
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/accounts?customerId={{customerId}}"
+          }
+        },
+        {
+          "name": "Get Account — Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('errorCode ACCOUNT_NOT_FOUND', () => pm.expect(pm.response.json().errorCode).to.eql('ACCOUNT_NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/accounts/00000000-0000-0000-0000-000000000000"
@@ -99,19 +150,26 @@
       "item": [
         {
           "name": "Deposit — Success",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                "pm.test('Type is DEPOSIT', () => pm.expect(pm.response.json().type).to.eql('DEPOSIT'));",
-                "pm.test('Status is SUCCESS', () => pm.expect(pm.response.json().status).to.eql('SUCCESS'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Type is DEPOSIT', () => pm.expect(pm.response.json().type).to.eql('DEPOSIT'));",
+                  "pm.test('Status is SUCCESS', () => pm.expect(pm.response.json().status).to.eql('SUCCESS'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/accounts/{{accountId}}/transactions/deposits",
             "body": {
               "mode": "raw",
@@ -124,8 +182,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Idempotency-Key", "value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              }
             ],
             "url": "{{baseUrl}}/accounts/{{accountId}}/transactions/deposits",
             "body": {
@@ -136,18 +200,25 @@
         },
         {
           "name": "Withdrawal — Success",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                "pm.test('Type is WITHDRAWAL', () => pm.expect(pm.response.json().type).to.eql('WITHDRAWAL'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Type is WITHDRAWAL', () => pm.expect(pm.response.json().type).to.eql('WITHDRAWAL'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/accounts/{{accountId}}/transactions/withdrawals",
             "body": {
               "mode": "raw",
@@ -157,18 +228,25 @@
         },
         {
           "name": "Withdrawal — Insufficient Funds (422)",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 422', () => pm.response.to.have.status(422));",
-                "pm.test('errorCode INSUFFICIENT_FUNDS', () => pm.expect(pm.response.json().errorCode).to.eql('INSUFFICIENT_FUNDS'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('errorCode INSUFFICIENT_FUNDS', () => pm.expect(pm.response.json().errorCode).to.eql('INSUFFICIENT_FUNDS'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/accounts/{{accountId}}/transactions/withdrawals",
             "body": {
               "mode": "raw",
@@ -178,21 +256,28 @@
         },
         {
           "name": "Transfer — Atomic Success",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                "var json = pm.response.json();",
-                "pm.test('Returns 2 transactions', () => pm.expect(json).to.have.lengthOf(2));",
-                "pm.test('First is TRANSFER_DEBIT', () => pm.expect(json[0].type).to.eql('TRANSFER_DEBIT'));",
-                "pm.test('Second is TRANSFER_CREDIT', () => pm.expect(json[1].type).to.eql('TRANSFER_CREDIT'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "var json = pm.response.json();",
+                  "pm.test('Returns 2 transactions', () => pm.expect(json).to.have.lengthOf(2));",
+                  "pm.test('First is TRANSFER_DEBIT', () => pm.expect(json[0].type).to.eql('TRANSFER_DEBIT'));",
+                  "pm.test('Second is TRANSFER_CREDIT', () => pm.expect(json[1].type).to.eql('TRANSFER_CREDIT'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/accounts/{{accountId}}/transactions/transfers",
             "body": {
               "mode": "raw",
@@ -202,17 +287,19 @@
         },
         {
           "name": "Transaction History — Paginated",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                "var json = pm.response.json();",
-                "pm.test('Has content array', () => pm.expect(json).to.have.property('content'));",
-                "pm.test('Has pagination metadata', () => pm.expect(json).to.have.property('totalElements'));"
-              ]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Has content array', () => pm.expect(json).to.have.property('content'));",
+                  "pm.test('Has pagination metadata', () => pm.expect(json).to.have.property('totalElements'));"
+                ]
+              }
             }
-          }],
+          ],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/accounts/{{accountId}}/transactions?page=0&size=20"

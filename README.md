@@ -178,7 +178,7 @@ POST /api/v1/accounts/{sourceId}/transactions/transfers
 }
 ```
 
-### Flujo de integraciÃ³n para frontend
+### Flujo de integracion para frontend
 
 Cuando el canal consumidor autentica al usuario en un `auth-service` separado, el flujo
 recomendado para descubrir sus cuentas es:
